@@ -150,3 +150,65 @@ export function useDashboardLayout() {
     resetLayout,
   };
 }
+
+const DEFAULT_LAYOUT: LayoutItem[] = [
+  { i: 'metrics-overview', x: 0, y: 0, w: 12, h: 2 },
+  { i: 'transaction-volume', x: 0, y: 2, w: 6, h: 4 },
+  { i: 'liquidity-pools', x: 6, y: 2, w: 6, h: 4 },
+  { i: 'network-activity', x: 0, y: 6, w: 12, h: 4 },
+];
+
+const STORAGE_KEY = 'stellar_analytics_dashboard_layout_v1';
+
+export function useDashboardLayout() {
+  const [layout, setLayout] = useState<LayoutItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsedJson = JSON.parse(saved);
+        // Validate parsed layout against Zod schema
+        const result = dashboardLayoutSchema.safeParse(parsedJson);
+        if (result.success) {
+          return result.data;
+        } else {
+          console.warn('Invalid saved dashboard layout schema detected. Falling back to default layout.', result.error.format());
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load or parse dashboard layout from storage', e);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    return DEFAULT_LAYOUT;
+  });
+
+  const updateLayout = useCallback((newLayout: LayoutItem[]) => {
+    const result = dashboardLayoutSchema.safeParse(newLayout);
+    if (!result.success) {
+      console.error('Attempted to save invalid layout schema', result.error.format());
+      return;
+    }
+
+    setLayout(result.data);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data));
+    } catch (e) {
+      console.error('Failed to save dashboard layout to storage', e);
+    }
+  }, []);
+
+  const resetLayout = useCallback(() => {
+    setLayout(DEFAULT_LAYOUT);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.error('Failed to clear dashboard layout from storage', e);
+    }
+  }, []);
+
+  return {
+    layout,
+    updateLayout,
+    resetLayout,
+  };
+}
