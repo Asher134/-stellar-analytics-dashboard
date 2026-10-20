@@ -94,3 +94,59 @@ export function useDashboardLayout() {
 
   return { layout, isInitialized, toggleVisibility, move, reset };
 }
+
+
+export interface LayoutItem {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+const DEFAULT_LAYOUT: LayoutItem[] = [
+  { i: 'metrics-overview', x: 0, y: 0, w: 12, h: 2 },
+  { i: 'transaction-volume', x: 0, y: 2, w: 6, h: 4 },
+  { i: 'liquidity-pools', x: 6, y: 2, w: 6, h: 4 },
+  { i: 'network-activity', x: 0, y: 6, w: 12, h: 4 },
+];
+
+const STORAGE_KEY = 'stellar_analytics_dashboard_layout_v1';
+
+export function useDashboardLayout() {
+  const [layout, setLayout] = useState<LayoutItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Failed to load dashboard layout from storage', e);
+    }
+    return DEFAULT_LAYOUT;
+  });
+
+  const updateLayout = useCallback((newLayout: LayoutItem[]) => {
+    setLayout(newLayout);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newLayout));
+    } catch (e) {
+      console.error('Failed to save dashboard layout to storage', e);
+    }
+  }, []);
+
+  const resetLayout = useCallback(() => {
+    setLayout(DEFAULT_LAYOUT);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.error('Failed to clear dashboard layout from storage', e);
+    }
+  }, []);
+
+  return {
+    layout,
+    updateLayout,
+    resetLayout,
+  };
+}
