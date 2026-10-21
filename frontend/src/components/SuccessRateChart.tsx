@@ -8,6 +8,7 @@
 import { useQuery } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 import { NETWORK_METRICS_QUERY } from '../graphql/queries';
+import { formatChartTime } from '../utils/formatChartDate';
 
 interface MetricPoint {
   timestamp: string;
@@ -15,7 +16,7 @@ interface MetricPoint {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return formatChartTime(iso, 'en-US', 'UTC');
 }
 
 export function SuccessRateChart() {

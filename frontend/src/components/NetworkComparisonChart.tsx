@@ -1,24 +1,16 @@
 /**
- * NetworkComparisonChart (issue #243)
+ * NetworkComparisonChart (issue #243, #438)
  *
  * Displays side-by-side trend comparison charts for mainnet and testnet performance.
- * Supports comparison of multiple metrics with configurable time ranges.
+ * Metrics are loaded from live Horizon endpoints (no simulated testnet series).
  */
-import { useQuery } from '@apollo/client';
-import { NETWORK_METRICS_QUERY } from '../graphql/queries';
 import { ExportControls } from './ExportControls';
 import { ChartSkeleton } from './Skeleton';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { chartMetricLabelKey, type ChartMetricType } from '../utils/chartMetricLabels';
 
-interface MetricPoint {
-  timestamp: string;
-  transactionCount: number;
-  operationCount: number;
-  averageFee: number;
-  successRate: number;
-}
+type MetricPoint = HorizonMetricPoint;
 
 type MetricType = ChartMetricType;
 type TimeRange = '24h' | '7d' | '30d';
@@ -28,14 +20,12 @@ interface NetworkData {
   metrics: MetricPoint[];
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function formatTime(iso: string, locale: string = 'en-US'): string {
+  return formatChartTime(iso, locale, 'UTC');
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+function formatDate(iso: string, locale: string = 'en-US'): string {
+  return formatChartAxisDate(iso, locale, 'UTC');
 }
 
 function getTimeRangeHours(range: TimeRange): number {
@@ -62,37 +52,52 @@ export function NetworkComparisonChart() {
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const metricLabel = t(chartMetricLabelKey(selectedMetric));
 
-  const now = new Date();
   const hours = getTimeRangeHours(timeRange);
-  const startTime = new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
 
-  // Query for current network (simulated - in production this would query both networks)
-  const { data, loading, error, refetch } = useQuery(NETWORK_METRICS_QUERY, {
-    variables: { timeRange: { startTime, endTime: now.toISOString() } },
-    pollInterval: 30_000,
-    notifyOnNetworkStatusChange: true,
-    errorPolicy: 'all',
-  });
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
 
-  const currentMetrics: MetricPoint[] = (data?.networkMetrics ?? []).map((m: any) => ({
-    timestamp: m.timestamp,
-    transactionCount: m.transactionCount ?? 0,
-    operationCount: m.operationCount ?? 0,
-    averageFee: m.averageFee ?? 0,
-    successRate: m.successRate ?? 0,
-  }));
+    async function load() {
+      setLoading(true);
+      setError(null);
+      const now = new Date();
+      const startTime = new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
+      const endTime = now.toISOString();
+      const range = { startTime, endTime };
 
-  // Simulate testnet data (in production, this would come from a separate API endpoint)
-  const testnetMetrics: MetricPoint[] = currentMetrics.map(m => ({
-    ...m,
-    transactionCount: Math.max(0, Math.round(m.transactionCount * 0.3 + Math.random() * 10)),
-    operationCount: Math.max(0, Math.round(m.operationCount * 0.25 + Math.random() * 5)),
-    averageFee: Math.max(0, m.averageFee * 0.8 + Math.random() * 100),
-    successRate: Math.min(100, Math.max(90, m.successRate - Math.random() * 5)),
-  }));
+      try {
+        // Issue #438 – real Horizon data for both networks (no simulated testnet series).
+        const [mainnet, testnet] = await Promise.all([
+          fetchHorizonNetworkMetrics('mainnet', range),
+          fetchHorizonNetworkMetrics('testnet', range),
+        ]);
+        if (cancelled) return;
+        setMainnetMetrics(mainnet);
+        setTestnetMetrics(testnet);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, [hours, refreshTick]);
+
+  const refetch = () => setRefreshTick((n) => n + 1);
+
+  const currentMetrics = mainnetMetrics;
 
   const networks: NetworkData[] = [
-    { network: 'mainnet', metrics: currentMetrics },
+    { network: 'mainnet', metrics: mainnetMetrics },
     { network: 'testnet', metrics: testnetMetrics },
   ];
 
@@ -337,7 +342,7 @@ export function NetworkComparisonChart() {
                   return (
                     <div
                       key={i}
-                      title={`${network}: ${formatTime(m.timestamp)} - ${value.toLocaleString(i18n.language)}`}
+                      title={`${network}: ${formatTime(m.timestamp, i18n.language)} - ${value.toLocaleString(i18n.language)}`}
                       style={{
                         flex: 1,
                         height: `${Math.max(heightPct, 2)}%`,
@@ -362,10 +367,10 @@ export function NetworkComparisonChart() {
       {/* X-axis labels */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
         <span style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}>
-          {formatDate(currentMetrics[0]?.timestamp)}
+          {formatDate(currentMetrics[0]?.timestamp, i18n.language)}
         </span>
         <span style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}>
-          {formatDate(currentMetrics[currentMetrics.length - 1]?.timestamp)}
+          {formatDate(currentMetrics[currentMetrics.length - 1]?.timestamp, i18n.language)}
         </span>
       </div>
 
