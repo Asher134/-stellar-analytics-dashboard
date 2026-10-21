@@ -12,6 +12,7 @@ import {
   fetchHorizonNetworkMetrics,
   type HorizonMetricPoint,
 } from '../utils/fetchHorizonNetworkMetrics';
+import { formatChartAxisDate, formatChartTime } from '../utils/formatChartDate';
 
 type MetricPoint = HorizonMetricPoint;
 
@@ -23,14 +24,12 @@ interface NetworkData {
   metrics: MetricPoint[];
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function formatTime(iso: string, locale: string = 'en-US'): string {
+  return formatChartTime(iso, locale, 'UTC');
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+function formatDate(iso: string, locale: string = 'en-US'): string {
+  return formatChartAxisDate(iso, locale, 'UTC');
 }
 
 function getTimeRangeHours(range: TimeRange): number {
@@ -360,7 +359,7 @@ export function NetworkComparisonChart() {
                   return (
                     <div
                       key={i}
-                      title={`${network}: ${formatTime(m.timestamp)} - ${value.toLocaleString(i18n.language)}`}
+                      title={`${network}: ${formatTime(m.timestamp, i18n.language)} - ${value.toLocaleString(i18n.language)}`}
                       style={{
                         flex: 1,
                         height: `${Math.max(heightPct, 2)}%`,
@@ -385,10 +384,10 @@ export function NetworkComparisonChart() {
       {/* X-axis labels */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
         <span style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}>
-          {formatDate(currentMetrics[0]?.timestamp)}
+          {formatDate(currentMetrics[0]?.timestamp, i18n.language)}
         </span>
         <span style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}>
-          {formatDate(currentMetrics[currentMetrics.length - 1]?.timestamp)}
+          {formatDate(currentMetrics[currentMetrics.length - 1]?.timestamp, i18n.language)}
         </span>
       </div>
 
