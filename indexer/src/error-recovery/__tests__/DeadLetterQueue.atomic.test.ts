@@ -37,7 +37,14 @@ describe('DeadLetterQueue atomic writes (#434)', () => {
 
   it('writes terminally failed ledgers through the atomic append path', () => {
     const dlqFile = path.join(tmpDir, 'dead-letter-queue.log');
-    const queue = new DeadLetterQueue({ maxRetries: 2, baseDelayMs: 1, dlqFile });
+    const stateFile = path.join(tmpDir, 'dead-letter-queue-state.json');
+    const queue = new DeadLetterQueue({
+      maxRetries: 2,
+      baseDelayMs: 1,
+      dlqFile,
+      stateFile,
+      loadOnInit: false,
+    });
 
     queue.push(100, 'first');
     expect(fs.existsSync(dlqFile)).toBe(false);

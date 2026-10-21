@@ -517,6 +517,7 @@ Step 6: After DLQ is drained, trigger a backfill
 - Alerting when DLQ exceeds threshold (default: 100 items)
 - Monitor DLQ depth via Prometheus gauge
 - Terminal DLQ log writes use atomic temp+fsync+rename so a crash cannot leave a partial line (#434)
+- Active DLQ entries are persisted to `dead-letter-queue-state.json` and reloaded on indexer restart (#435)
 
 ---
 
