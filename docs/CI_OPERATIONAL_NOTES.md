@@ -2,6 +2,18 @@
 
 This document provides operational guidance for the CI/CD pipeline for the Stellar Analytics Dashboard.
 
+## Immutable GitHub Actions pins
+
+<!-- ci-actions-pinning: immutable-sha -->
+
+All `uses:` entries under `.github/workflows/` must pin third-party actions to a **full 40-character commit SHA**, with the version tag in a trailing comment:
+
+```yaml
+- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+```
+
+Floating tags (`@v4`, `@v7`) are not allowed. Dependabot’s `github-actions` ecosystem still opens upgrade PRs; reviewers should accept only SHA pins. See also [`dependency-management.md`](./dependency-management.md#pinning-policy).
+
 ## CI Workflows
 
 ### CI Workflow (`.github/workflows/ci.yml`)
@@ -25,6 +37,7 @@ The main CI workflow runs on every push and pull request to `main` and `develop`
 - **Runtime**: ~25 minutes
 - **Ports**: 5432 (PostgreSQL), 6379 (Redis)
 - **Quarantined tests**: Skipped automatically (flaky tests are excluded)
+- **API contract gate**: `pnpm --filter @stellar-analytics/e2e check:contract` runs after install and **before** Playwright browser download (see `packages/e2e/scripts/check-api-contract.mjs`)
 
 #### Deployment Smoke Tests Job
 - Verifies the deployed application is functional
@@ -71,7 +84,7 @@ This workflow scans for container and dependency vulnerabilities:
 
 1. **trivy-scan** (15 minutes): Scans project files for vulnerabilities
 2. **dockerfile-lint** (5 minutes): Validates Dockerfiles against best practices
-3. **docker-compose-lint** (5 minutes): Validates Docker Compose configurations
+3. **docker-compose-lint** (5 minutes): Validates Docker Compose files with `docker compose config`
 
 #### Triggers
 - Push to `main` and `develop` branches

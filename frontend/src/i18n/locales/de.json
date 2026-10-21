@@ -92,7 +92,14 @@
     "successRate": "Erfolgsrate",
     "autoRefresh": "automatische Aktualisierung alle 30s",
     "updating": "Aktualisiere…",
-    "refreshChart": "Diagramm aktualisieren"
+    "refreshChart": "Diagramm aktualisieren",
+    "metrics": {
+      "transactionCount": "Transaktionen",
+      "operationCount": "Operationen",
+      "averageFee": "Durchschn. Gebühr (Stroops)",
+      "successRate": "Erfolgsrate (%)",
+      "ariaLabel": "Netzwerkvergleichsdiagramm für {{metric}}"
+    }
   },
   "freshness": {
     "justNow": "Gerade eben",

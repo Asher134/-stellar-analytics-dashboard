@@ -12,7 +12,7 @@ The Network Comparison Chart feature (Issue #243) provides side-by-side trend vi
 - **Synchronized time ranges**: Both networks display data for the same time period
 
 ### Metric Selection
-Users can compare different performance metrics:
+Users can compare different performance metrics. Labels are localized via `chart.metrics.*` i18n keys (`frontend/src/utils/chartMetricLabels.ts`):
 - **Transaction Count**: Number of transactions over time
 - **Operation Count**: Number of operations over time
 - **Average Fee**: Average transaction fee in stroops

@@ -7,16 +7,12 @@
 import { ExportControls } from './ExportControls';
 import { ChartSkeleton } from './Skeleton';
 import { useTranslation } from 'react-i18next';
-import { useEffect, useState } from 'react';
-import {
-  fetchHorizonNetworkMetrics,
-  type HorizonMetricPoint,
-} from '../utils/fetchHorizonNetworkMetrics';
-import { formatChartAxisDate, formatChartTime } from '../utils/formatChartDate';
+import { useState } from 'react';
+import { chartMetricLabelKey, type ChartMetricType } from '../utils/chartMetricLabels';
 
 type MetricPoint = HorizonMetricPoint;
 
-type MetricType = 'transactionCount' | 'operationCount' | 'averageFee' | 'successRate';
+type MetricType = ChartMetricType;
 type TimeRange = '24h' | '7d' | '30d';
 
 interface NetworkData {
@@ -41,15 +37,6 @@ function getTimeRangeHours(range: TimeRange): number {
   }
 }
 
-function getMetricLabel(metric: MetricType): string {
-  switch (metric) {
-    case 'transactionCount': return 'Transactions';
-    case 'operationCount': return 'Operations';
-    case 'averageFee': return 'Avg Fee (stroops)';
-    case 'successRate': return 'Success Rate (%)';
-  }
-}
-
 function getMetricValue(point: MetricPoint, metric: MetricType): number {
   switch (metric) {
     case 'transactionCount': return point.transactionCount;
@@ -63,11 +50,7 @@ export function NetworkComparisonChart() {
   const { t, i18n } = useTranslation();
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('transactionCount');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
-  const [mainnetMetrics, setMainnetMetrics] = useState<MetricPoint[]>([]);
-  const [testnetMetrics, setTestnetMetrics] = useState<MetricPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [refreshTick, setRefreshTick] = useState(0);
+  const metricLabel = t(chartMetricLabelKey(selectedMetric));
 
   const hours = getTimeRangeHours(timeRange);
 
@@ -249,10 +232,10 @@ export function NetworkComparisonChart() {
               cursor: 'pointer',
             }}
           >
-            <option value="transactionCount">Transactions</option>
-            <option value="operationCount">Operations</option>
-            <option value="averageFee">Avg Fee</option>
-            <option value="successRate">Success Rate</option>
+            <option value="transactionCount">{t(chartMetricLabelKey('transactionCount'))}</option>
+            <option value="operationCount">{t(chartMetricLabelKey('operationCount'))}</option>
+            <option value="averageFee">{t(chartMetricLabelKey('averageFee'))}</option>
+            <option value="successRate">{t(chartMetricLabelKey('successRate'))}</option>
           </select>
 
           {/* Time range selector */}
@@ -330,7 +313,7 @@ export function NetworkComparisonChart() {
       {/* Comparison chart */}
       <div
         role="img"
-        aria-label={`Network comparison chart showing ${getMetricLabel(selectedMetric)}`}
+        aria-label={t('chart.metrics.ariaLabel', { metric: metricLabel })}
         style={{
           display: 'flex',
           flexDirection: 'column',

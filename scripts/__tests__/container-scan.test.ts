@@ -101,7 +101,7 @@ describe('Container Vulnerability Scanning', () => {
 
     it('workflow uploads SARIF results', () => {
       const content = readFileSync(workflowPath, 'utf-8');
-      expect(content).toContain('codeql-action/upload-sarif@v3');
+      expect(content).toContain('codeql-action/upload-sarif@');
       expect(content).toContain('sarif_file: \'trivy-results.sarif\'');
     });
 
@@ -150,10 +150,11 @@ describe('Container Vulnerability Scanning', () => {
       expect(content).toContain('ignore-unfixed:');
     });
 
-    it('Workflow checks security in docker-compose lint', () => {
+    it('Workflow validates docker-compose config locally', () => {
       const workflowPath = join(__dirname, '../.github/workflows/container-scan.yml');
       const content = readFileSync(workflowPath, 'utf-8');
-      expect(content).toContain('check-security:');
+      expect(content).toContain('docker compose -f docker-compose.yml config');
+      expect(content).toContain('docker-compose.dev.yml');
     });
   });
 });

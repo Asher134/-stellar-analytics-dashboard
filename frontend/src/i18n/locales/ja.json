@@ -92,7 +92,14 @@
     "successRate": "成功率",
     "autoRefresh": "30秒ごとに自動更新",
     "updating": "更新中…",
-    "refreshChart": "チャートを更新"
+    "refreshChart": "チャートを更新",
+    "metrics": {
+      "transactionCount": "トランザクション",
+      "operationCount": "オペレーション",
+      "averageFee": "平均手数料（ストループ）",
+      "successRate": "成功率（%）",
+      "ariaLabel": "{{metric}}を表示するネットワーク比較チャート"
+    }
   },
   "freshness": {
     "justNow": "たった今",

@@ -146,7 +146,7 @@ Open a PR with the title format: `chore(deps): manually bump <package> to <versi
 - **Patch and minor** updates: allowed automatically (uses `^` ranges in `package.json`).
 - **Major** updates: Dependabot opens a PR but a human must review and merge manually.
 - **Docker images**: pin to a specific minor version tag (e.g. `postgres:16-alpine`, not `postgres:latest`). Dependabot will open PRs when a new patch is available.
-- **GitHub Actions**: pin to a specific version tag (e.g. `actions/checkout@v4`).
+- **GitHub Actions**: pin immutably to a full commit SHA, with the human-readable version in a trailing comment (e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2`). Do not use floating major tags such as `@v4` alone.
 
 ---
 

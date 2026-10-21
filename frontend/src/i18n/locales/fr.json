@@ -92,7 +92,14 @@
     "successRate": "Taux de succès",
     "autoRefresh": "actualisation automatique toutes les 30s",
     "updating": "Mise à jour…",
-    "refreshChart": "Actualiser le graphique"
+    "refreshChart": "Actualiser le graphique",
+    "metrics": {
+      "transactionCount": "Transactions",
+      "operationCount": "Opérations",
+      "averageFee": "Frais moy. (stroops)",
+      "successRate": "Taux de succès (%)",
+      "ariaLabel": "Graphique de comparaison réseau affichant {{metric}}"
+    }
   },
   "freshness": {
     "justNow": "À l'instant",
