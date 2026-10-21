@@ -1,18 +1,45 @@
 # Release Notes Process
 
-This document describes how release notes and the CHANGELOG are generated, reviewed, and published for the Stellar Analytics Dashboard.
+Maintainer guide for generating, reviewing, and publishing release notes for the Stellar Analytics Dashboard.
+
+<!-- release-notes-docs: preview, dry-run, issue-labels, changelog -->
 
 ---
 
 ## Overview
 
-Release notes are generated automatically from [conventional commits](https://www.conventionalcommits.org/) using `scripts/generate-release-notes.mjs`. No manual editing of `CHANGELOG.md` is required for routine releases.
+Release notes are generated from [conventional commit](https://www.conventionalcommits.org/) history using `scripts/generate-release-notes.mjs`. GitHub **issue labels** do not feed the generator directly; they guide how work is titled and committed so the CHANGELOG sections stay accurate (see [Issue labels and commit history](#issue-labels-and-commit-history)).
 
 ```
-conventional commits  →  generate-release-notes.mjs  →  CHANGELOG.md
-                                                       →  GitHub PR comment (preview)
-                                                       →  GitHub Release body
+issue labels (guidance)  →  conventional commits on main
+                                    ↓
+                    generate-release-notes.mjs
+                                    ↓
+                         CHANGELOG.md / GitHub Release body
 ```
+
+Routine releases should not require hand-editing `CHANGELOG.md` when commit messages are correct.
+
+---
+
+## Issue labels and commit history
+
+Labels from [`contributor-issue-taxonomy.md`](./contributor-issue-taxonomy.md) tell maintainers how a change should appear in history. Map them to conventional commit **types** (and scopes) before merge:
+
+| Issue signal | Prefer commit type | CHANGELOG section |
+|--------------|--------------------|-------------------|
+| Title / type `feat:` or feature work | `feat` | ✨ Features |
+| Title / type `fix:` or bug | `fix` | 🐛 Bug Fixes |
+| Area / type `docs` | `docs` | 📝 Documentation |
+| Area / type `ci:` or `devops / ci` | `ci` | 👷 CI |
+| Shared library work (`shared:`) | `feat` / `fix` / `refactor` with scope `shared` | matching type section |
+| Performance work | `perf` | ⚡ Performance |
+
+Area labels (`frontend`, `api`, `indexer`, `shared`, `docs`, `devops / ci`) should become the commit **scope** when practical, for example `feat(api): …` or `ci(e2e): …`.
+
+Workflow labels (`needs-triage`, `priority:*`, `Stellar Wave`, `wontfix`) are for triage only and never appear in release notes.
+
+When reviewing a PR, confirm the squash/merge commit type matches the issue type and that the description will read well in the CHANGELOG.
 
 ---
 
@@ -56,21 +83,32 @@ BREAKING CHANGE: Clients using /v1/stats must migrate to /graphql query stats{}
 
 ---
 
-## Generating release notes locally
+## Preview and dry-run
+
+Use these before writing `CHANGELOG.md` or cutting a GitHub Release.
+
+| Command | Effect |
+|---------|--------|
+| `pnpm release:notes:preview` | Runs with `--dry-run`: prints Markdown to stdout, does **not** write files |
+| `node scripts/generate-release-notes.mjs --dry-run` | Same dry-run behaviour |
+| `node scripts/generate-release-notes.mjs --output stdout` | Prints to stdout only (no CHANGELOG write) |
+| `pnpm release:notes -- --version <semver>` | Writes/prepends the entry to `CHANGELOG.md` |
 
 ```bash
-# Preview since the last tag (no file changes)
+# Preview commits since the last tag (safe; no file changes)
 pnpm release:notes:preview
 
-# Write CHANGELOG.md for a specific version
+# Preview an explicit range
+node scripts/generate-release-notes.mjs --dry-run --from v1.2.0 --to HEAD --version 1.3.0
+
+# Write CHANGELOG.md for a specific version (after preview looks correct)
 pnpm release:notes -- --version 1.3.0
 
-# Diff between two specific tags
+# Diff between two tags and write
 pnpm release:notes -- --from v1.2.0 --to v1.3.0 --version 1.3.0
-
-# Output to stdout only
-node scripts/generate-release-notes.mjs --output stdout
 ```
+
+Dry-run output is the source of truth for GitHub Release bodies—paste it or pass it via `--notes-file` (see below).
 
 ---
 
@@ -87,18 +125,22 @@ npm version minor   # or patch / major
 #   tag: v1.3.0
 ```
 
-### 2. Push the tag
+### 2. Generate and review notes
+
+```bash
+pnpm release:notes:preview
+pnpm release:notes -- --version 1.3.0   # when preview is approved
+git add CHANGELOG.md
+git commit -m "docs(changelog): add v1.3.0 release notes"
+```
+
+### 3. Push the tag
 
 ```bash
 git push origin main --follow-tags
 ```
 
-Pushing a `v*` tag triggers the `release-notes.yml` workflow, which:
-1. Runs `generate-release-notes.mjs` for the new version.
-2. Prepends the new entry to `CHANGELOG.md`.
-3. Commits and pushes the updated CHANGELOG to `main` (skipping CI).
-
-### 3. Create a GitHub Release
+### 4. Create a GitHub Release
 
 ```bash
 gh release create v1.3.0 \
@@ -106,17 +148,11 @@ gh release create v1.3.0 \
   --notes-file <(node scripts/generate-release-notes.mjs --dry-run --output stdout)
 ```
 
-Or in the GitHub UI: use the tag, paste the output of `pnpm release:notes:preview` into the body.
+Or in the GitHub UI: create the release from the tag and paste the dry-run / preview Markdown into the body.
 
 ---
 
-## PR preview comments
-
-Every pull request targeting `main` automatically receives a **Release Notes Preview** comment from the `release-notes.yml` workflow. The comment is updated (not re-posted) on each new push to the PR branch. This lets reviewers verify that commit messages will produce sensible release notes before merge.
-
----
-
-## CHANGELOG format
+## CHANGELOG guidance
 
 `CHANGELOG.md` is an append-at-top file. Each entry has the structure:
 
@@ -140,21 +176,28 @@ Every pull request targeting `main` automatically receives a **Release Notes Pre
 ---
 ```
 
+Maintainer checklist before publishing:
+
+- Preview/dry-run output matches the intended user-facing changes.
+- Breaking changes are explicit (`!` or `BREAKING CHANGE:` footer).
+- Scopes reflect area labels (`api`, `frontend`, `indexer`, …).
+- Non-conventional commits are skipped by the script (they do not fail generation)—fix those commits in history if they should appear.
+
 ---
 
-## Acceptance criteria
+## Maintainer verification
 
-- [ ] `pnpm release:notes:preview` prints a correctly formatted Markdown entry to stdout.
-- [ ] `pnpm release:notes` prepends the entry to `CHANGELOG.md`.
-- [ ] Pushing a `v*` tag triggers the GitHub Actions workflow and updates `CHANGELOG.md`.
-- [ ] Every PR to `main` receives a release notes preview comment.
-- [ ] Breaking changes (`!` or `BREAKING CHANGE:` footer) appear in a dedicated top section.
-- [ ] Commits that do not match the conventional format are silently skipped (not errors).
+- [ ] `pnpm release:notes:preview` (or `--dry-run`) prints a correctly formatted Markdown entry to stdout.
+- [ ] `pnpm release:notes -- --version <semver>` prepends the entry to `CHANGELOG.md`.
+- [ ] Issue type/area labels were reflected in merged conventional commits.
+- [ ] Breaking changes appear in a dedicated top section.
+- [ ] GitHub Release body matches the dry-run output.
 
 ---
 
 ## See Also
 
 - [Contributing Guide](../CONTRIBUTING.md) – commit message requirements and PR process
+- [Contributor issue taxonomy](./contributor-issue-taxonomy.md) – issue labels and types
+- [Versioning](./versioning.md) – semver and CHANGELOG section ownership
 - `scripts/generate-release-notes.mjs` – script source with inline documentation
-- `.github/workflows/release-notes.yml` – CI automation
