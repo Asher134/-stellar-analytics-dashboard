@@ -81,3 +81,7 @@ packages/e2e/tests/__snapshots__/**/*-diff.png
 # Snapshot test artefacts
 *.snap
 **/__snapshots__/*.snap
+
+# Indexer DLQ runtime state
+dead-letter-queue-state.json
+dead-letter-queue.log

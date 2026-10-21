@@ -7,6 +7,7 @@
  */
 import { useQuery } from '@apollo/client';
 import { NETWORK_METRICS_QUERY } from '../graphql/queries';
+import { formatChartTime } from '../utils/formatChartDate';
 import { ExportControls } from './ExportControls';
 import { ChartSkeleton } from './Skeleton';
 import { EmptyState } from './EmptyState';
@@ -65,9 +66,8 @@ const forecastNextHours = (data: MetricPoint[], count: number = 3): MetricPoint[
   return forecasted;
 };
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function formatTime(iso: string, locale?: string): string {
+  return formatChartTime(iso, locale ?? 'en-US', 'UTC');
 }
 
 export interface TransactionsChartProps {

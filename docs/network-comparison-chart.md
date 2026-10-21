@@ -152,14 +152,13 @@ Added translation key `chart.networkComparison` to all supported languages:
 1. **Component Mount**: NetworkComparisonChart initializes with default metric (transactionCount) and time range (24h)
 2. **API Query**: Component queries `networkMetrics` GraphQL endpoint with time range parameters
 3. **Data Processing**: Response is mapped to MetricPoint interface
-4. **Testnet Simulation**: Testnet data is simulated (production would query separate endpoint)
+4. **Horizon Fetch**: Mainnet and testnet series are loaded from live Horizon `/ledgers` aggregates (#438)
 5. **Visualization**: Dual bar charts render with network-specific colors
 6. **Auto-Refresh**: Polling every 30s updates data automatically
 
 ## Future Enhancements
 
 ### Production Improvements
-- **Real Multi-Network Data**: Replace simulated testnet data with actual API calls to testnet endpoints
 - **Network Configuration**: Add support for custom network endpoints
 - **Advanced Metrics**: Add more comparison metrics (TPS, latency, etc.)
 - **Chart Types**: Support line charts, area charts, and stacked visualizations
@@ -239,8 +238,8 @@ query GetStats {
 - Check API logs for query errors
 
 ### Testnet Data Incorrect
-- Note: Current implementation uses simulated testnet data
-- Production requires separate testnet API endpoint
+- Comparison chart loads both networks from Horizon (`horizon.stellar.org` / `horizon-testnet.stellar.org`)
+- Sparse windows can occur when Horizon pagination reaches `maxPages` before covering the full range
 - Check network configuration in `shared/src/config/networks.ts`
 
 ### Export Not Working
