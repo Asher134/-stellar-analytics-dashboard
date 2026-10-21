@@ -97,7 +97,14 @@
     "refreshChart": "Refresh chart",
     "forecast": "Forecast",
     "historical": "Historical",
-    "expectedForecast": "Expected (Forecast)"
+    "expectedForecast": "Expected (Forecast)",
+    "metrics": {
+      "transactionCount": "Transactions",
+      "operationCount": "Operations",
+      "averageFee": "Avg Fee (stroops)",
+      "successRate": "Success Rate (%)",
+      "ariaLabel": "Network comparison chart showing {{metric}}"
+    }
   },
   "freshness": {
     "justNow": "Just now",
