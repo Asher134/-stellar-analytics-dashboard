@@ -516,6 +516,7 @@ Step 6: After DLQ is drained, trigger a backfill
 - DLQ items are automatically retried with exponential backoff
 - Alerting when DLQ exceeds threshold (default: 100 items)
 - Monitor DLQ depth via Prometheus gauge
+- Terminal DLQ log writes use atomic temp+fsync+rename so a crash cannot leave a partial line (#434)
 
 ---
 

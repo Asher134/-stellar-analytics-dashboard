@@ -5,6 +5,7 @@ const DLQ_FILE = path.join(__dirname, '../../..', 'dead-letter-queue.log');
 
 /**
  * Issue #36 – Indexer Error Recovery
+ * Issue #434 – Atomic DLQ writes (temp file + fsync + rename)
  *
  * Dead letter queue for failed ledger processing with exponential backoff retry.
  */
@@ -17,14 +18,61 @@ export interface RetryableLedger {
   lastError: string;
 }
 
+/**
+ * Atomically replace `filePath` with `content`.
+ * Write to a unique temp file, fsync, then rename over the destination.
+ */
+export function atomicWriteFile(filePath: string, content: string): void {
+  const dir = path.dirname(filePath);
+  fs.mkdirSync(dir, { recursive: true });
+  const tmpPath = path.join(
+    dir,
+    `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`
+  );
+  const fd = fs.openSync(tmpPath, 'w');
+  try {
+    fs.writeFileSync(fd, content, 'utf8');
+    fs.fsyncSync(fd);
+  } catch (err) {
+    try {
+      fs.closeSync(fd);
+    } catch {
+      /* ignore */
+    }
+    try {
+      fs.unlinkSync(tmpPath);
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  }
+  fs.closeSync(fd);
+  fs.renameSync(tmpPath, filePath);
+}
+
+/**
+ * Atomically append a line by rewriting the full file contents.
+ * Avoids torn writes from a mid-append crash (#434).
+ */
+export function atomicAppendLine(filePath: string, line: string): void {
+  let existing = '';
+  if (fs.existsSync(filePath)) {
+    existing = fs.readFileSync(filePath, 'utf8');
+  }
+  const next = existing.endsWith('\n') || existing.length === 0 ? existing : `${existing}\n`;
+  atomicWriteFile(filePath, `${next}${line}`);
+}
+
 export class DeadLetterQueue {
   private failedLedgers: RetryableLedger[] = [];
   private readonly maxRetries: number;
   private readonly baseDelayMs: number;
+  private readonly dlqFile: string;
 
-  constructor(options?: { maxRetries?: number; baseDelayMs?: number }) {
+  constructor(options?: { maxRetries?: number; baseDelayMs?: number; dlqFile?: string }) {
     this.maxRetries = options?.maxRetries ?? 5;
     this.baseDelayMs = options?.baseDelayMs ?? 1000;
+    this.dlqFile = options?.dlqFile ?? DLQ_FILE;
   }
 
   /**
@@ -95,7 +143,7 @@ export class DeadLetterQueue {
     const logEntry = `[${new Date().toISOString()}] Terminally failed ledger: ${JSON.stringify(
       ledger
     )}\n`;
-    fs.appendFileSync(DLQ_FILE, logEntry);
+    atomicAppendLine(this.dlqFile, logEntry);
   }
 }
 
