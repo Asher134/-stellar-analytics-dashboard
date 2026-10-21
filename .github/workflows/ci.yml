@@ -134,6 +134,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check API contract before browsers
+        run: pnpm --filter @stellar-analytics/e2e check:contract
+
       - name: Install Playwright browsers
         run: pnpm --filter @stellar-analytics/e2e exec playwright install --with-deps
 

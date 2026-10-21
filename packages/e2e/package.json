@@ -16,6 +16,7 @@
     "test:visual:ci": "playwright test --project=visual-regression --reporter=list --reporter=junit",
     "test:flaky": "cross-env QUARANTINE_MODE=run-quarantined playwright test --project=flaky-detection --repeat-each=3",
     "test:flaky:ci": "cross-env QUARANTINE_MODE=run-quarantined playwright test --project=flaky-detection --repeat-each=3 --reporter=list --reporter=junit",
+    "check:contract": "node scripts/check-api-contract.mjs",
     "test:smoke": "ts-node scripts/smoke-test.ts",
     "test:smoke:ci": "cross-env CI=true ts-node scripts/smoke-test.ts",
     "flaky:promote": "ts-node scripts/promote-flaky.ts",

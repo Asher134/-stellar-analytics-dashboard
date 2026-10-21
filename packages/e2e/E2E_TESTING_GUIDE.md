@@ -21,9 +21,16 @@ The E2E tests are in the `packages/e2e` directory as a separate package.
 # Install dependencies from root
 pnpm install
 
+# Verify API contract before downloading browsers (CI also runs this gate)
+pnpm --filter @stellar-analytics/e2e check:contract
+
 # Install Playwright browsers (one-time setup)
 pnpm --filter @stellar-analytics/e2e exec playwright install --with-deps
 ```
+
+<!-- e2e-api-contract-gate: before-browsers -->
+
+CI workflows run `check:contract` **before** `playwright install` so a contract mismatch fails without downloading browsers. The check compares `EXPECTED_API_CONTRACT_VERSION` in `packages/e2e/scripts/check-api-contract.mjs` with `API_CONTRACT_VERSION` in `packages/api` (see [`docs/api-versioning.md`](../../docs/api-versioning.md)).
 
 ### Running Tests
 

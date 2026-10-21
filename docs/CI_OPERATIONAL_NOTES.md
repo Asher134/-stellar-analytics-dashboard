@@ -37,6 +37,7 @@ The main CI workflow runs on every push and pull request to `main` and `develop`
 - **Runtime**: ~25 minutes
 - **Ports**: 5432 (PostgreSQL), 6379 (Redis)
 - **Quarantined tests**: Skipped automatically (flaky tests are excluded)
+- **API contract gate**: `pnpm --filter @stellar-analytics/e2e check:contract` runs after install and **before** Playwright browser download (see `packages/e2e/scripts/check-api-contract.mjs`)
 
 #### Deployment Smoke Tests Job
 - Verifies the deployed application is functional
